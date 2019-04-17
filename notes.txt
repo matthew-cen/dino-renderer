@@ -1,3 +1,5 @@
 all elements 8x8
 
 make sure obstacles SLIDE in and not just pop up out of nowhere
+
+frame rate 50 Hz
