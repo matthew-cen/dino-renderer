@@ -34,7 +34,7 @@ module main(
     reg [3:0] current_sprite; // sprite currently being processed
     reg [4:0] pixel_pos_x;
     reg [4:0] pixel_pos_y;
-
+    reg game_over;
     parameter ROWS = 16;
 	parameter COLS = 24;
 	parameter MATRIX_TOTAL = ROWS * COLS; //384
@@ -155,7 +155,7 @@ module main(
         current_sprite <= 0;
         pixel_pos_x <= 0;
         pixel_pos_y <= 0;
-
+        game_over <= 0;
         obstacle_pos[0] <= 15'b101000100001111;
         obstacle_pos[1] <= 15'b000000000000000;
         obstacle_pos[2] <= 15'b000000000000000;
@@ -259,14 +259,18 @@ module main(
                                 pixel_pos_y = obstacle_pos[k][9:5] + i;
                                 pixel_pos_x = obstacle_pos[k][4:0] + j;
                                 if (pixel_pos_y < 15 || pixel_pos_x < 23) begin
+                                    // collision check
+                                    if (game_matrix[pixel_pos_y][pixel_pos_x] == 1) begin
+                                        game_over = 1;
+                                    end
                                     game_matrix[pixel_pos_y][pixel_pos_x] = icon[current_sprite][i][j];
                                 end
                             end
                         end	
                     end
                 end
-
-                renderer_state = 1;
+                if (game_over) renderer_state = 3;
+                else renderer_state = 1;
             end
             1: begin
                 // update obstacle positions
@@ -294,7 +298,9 @@ module main(
                     $write("\n");
                 end
                 renderer_state = 0;
-
+            end
+            3: begin
+                // game over state
             end
         endcase
     end
