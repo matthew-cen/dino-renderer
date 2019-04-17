@@ -25,7 +25,7 @@ module main(
     );
     input clk;
     reg [15:0] i, j, k;
-    reg [14:0] obstacle_pos [3:0]; // 2D array, [10] is active bit, [9:5] is y position, [4:0] is x position, max 4 obstables at once
+    reg [14:0] obstacle_pos [3:0]; // 2D array, [14] is active bit, [13:10] is sprite num,[9:5] is y position, [4:0] is x position, max 4 obstables at once
     reg [1:0] renderer_state;
     reg game_matrix [15:0][23:0];
 	reg matrix_to_send [15:0][23:0];
