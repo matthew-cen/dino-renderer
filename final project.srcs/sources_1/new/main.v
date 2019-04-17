@@ -31,10 +31,15 @@ module main(
 	reg matrix_to_send [15:0][23:0];
 	reg [393:0] seq;
 	reg [31:0] seq_nbits;
+    reg [3:0] current_sprite; // sprite currently being processed
+    reg [4:0] pixel_pos_x;
+    reg [4:0] pixel_pos_y;
 
     parameter ROWS = 16;
 	parameter COLS = 24;
 	parameter MATRIX_TOTAL = ROWS * COLS; //384
+//    parameter test_clk_cnt = 100000000;
+    parameter test_clk_cnt = 2;
 
     LED_matrix mat(
     .clk(clk),
@@ -49,8 +54,8 @@ module main(
     reg [7:0] icon [4:0][7:0];
     reg [7:0] dino [7:0];
     reg [7:0] dino_std [7:0];
-
-
+    wire one_sec_clock_out;
+    counter one_sec_clock(clk, one_sec_clock_out, test_clk_cnt);
     //transfer 8 slots to where they map on board    
     task transfer_line;
         input integer to_row, to_col, from_row, from_col;
@@ -147,10 +152,14 @@ module main(
 
     initial begin
         renderer_state <= 0;
-        obstacle_pos[0] <= 11'b101000100001111;
-        obstacle_pos[1] <= 11'b000000000000000;
-        obstacle_pos[2] <= 11'b000000000000000;
-        obstacle_pos[3] <= 11'b000000000000000;
+        current_sprite <= 0;
+        pixel_pos_x <= 0;
+        pixel_pos_y <= 0;
+
+        obstacle_pos[0] <= 15'b101000100001111;
+        obstacle_pos[1] <= 15'b000000000000000;
+        obstacle_pos[2] <= 15'b000000000000000;
+        obstacle_pos[3] <= 15'b000000000000000;
     
         icon[0][0] <= 8'b00000000;
         icon[0][1] <= 8'b00000000;
@@ -225,7 +234,7 @@ module main(
     end
     // 15ms frame time
     // 1s jump up/down unless down button is pressed
-    always@(posedge clk) begin
+    always@(posedge one_sec_clock_out) begin
         // for( i=0; i<ROWS; i = i + 1 ) begin
         //     for( j=0; j<COLS; j = j + 1 ) begin
         //         game_matrix[i][j] = !game_matrix[i][j];
@@ -236,18 +245,22 @@ module main(
         case (renderer_state) 
             0: begin
                 // update game matrix
-                for (k=0; k < 3; k = k + 1) begin
+                for (k=0; k < 4; k = k + 1) begin
                     // check if index in obstacle array contains a obstacle
                     if (obstacle_pos[k][14]) begin
-                          $display("\nRender Sprite #: %d", k);
-                          $display("\nRow #: %d", obstacle_pos[k][9:5]);
-                          $display("\nCol #: %d", obstacle_pos[k][4:0]);
+                        current_sprite = obstacle_pos[k][14:10];
+                          $display("\n Render Sprite #: %d Row #: %d, Col#: %d", current_sprite,obstacle_pos[k][9:5], obstacle_pos[k][4:0]);
                         for( i=0; i<8; i = i + 1 ) begin
                             for( j=0; j<8; j = j + 1 ) begin
 //                                $display("\nPixel Row #: %d", obstacle_pos[k][9:5] + i);
 //                                $display("\nPixel Col #: %d", obstacle_pos[k][4:0] + j);
 //                                $display("\nOn #: %d", icon[k][i][j]);
-                                game_matrix[obstacle_pos[k][9:5] + i][obstacle_pos[k][4:0] + j] = icon[obstacle_pos[13:10]][i][j];
+                                // boundary collision check
+                                pixel_pos_y = obstacle_pos[k][9:5] + i;
+                                pixel_pos_x = obstacle_pos[k][4:0] + j;
+                                if (pixel_pos_y < 15 || pixel_pos_x < 23) begin
+                                    game_matrix[pixel_pos_y][pixel_pos_x] = icon[current_sprite][i][j];
+                                end
                             end
                         end	
                     end
@@ -258,8 +271,14 @@ module main(
             1: begin
                 // update obstacle positions
                 for (k=0; k < 3; k = k + 1) begin
-                    obstacle_pos[k][4:0] = obstacle_pos[k][4:0] - 1;
+                    if (obstacle_pos[k][4:0] == 24) begin
+                        obstacle_pos[k][14] = 0;
+                    end
+                    else begin
+                        obstacle_pos[k][4:0] = obstacle_pos[k][4:0] - 1;
+                    end
                 end
+                // remove object from obstacle queue
                 renderer_state = 2;
             end
             2: begin
