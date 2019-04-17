@@ -24,13 +24,14 @@ module main(
     clk
     );
     input clk;
-    reg [15:0] i, j, k 
-    reg [10:0] obstacle_pos [3] // 2D array, [10] is active bit, [9:5] is y position, [4:0] is x position
-    integer game_matrix [15:0][23:0];
-	integer matrix_to_send [15:0][23:0];
+    reg [15:0] i, j, k;
+    reg [14:0] obstacle_pos [3:0]; // 2D array, [10] is active bit, [9:5] is y position, [4:0] is x position, max 4 obstables at once
+    reg [1:0] renderer_state;
+    reg game_matrix [15:0][23:0];
+	reg matrix_to_send [15:0][23:0];
 	reg [393:0] seq;
 	reg [31:0] seq_nbits;
-    
+
     parameter ROWS = 16;
 	parameter COLS = 24;
 	parameter MATRIX_TOTAL = ROWS * COLS; //384
@@ -44,6 +45,12 @@ module main(
     .write(write),
     .data(data),
     .debug(debug));
+    
+    reg [7:0] icon [4:0][7:0];
+    reg [7:0] dino [7:0];
+    reg [7:0] dino_std [7:0];
+
+
     //transfer 8 slots to where they map on board    
     task transfer_line;
         input integer to_row, to_col, from_row, from_col;
@@ -139,16 +146,137 @@ module main(
 	endtask
 
     initial begin
-
+        renderer_state <= 0;
+        obstacle_pos[0] <= 11'b101000100001111;
+        obstacle_pos[1] <= 11'b000000000000000;
+        obstacle_pos[2] <= 11'b000000000000000;
+        obstacle_pos[3] <= 11'b000000000000000;
     
+        icon[0][0] <= 8'b00000000;
+        icon[0][1] <= 8'b00000000;
+        icon[0][2] <= 8'b00000000;
+        icon[0][3] <= 8'b00000000;
+        icon[0][4] <= 8'b00000000;
+        icon[0][5] <= 8'b00000000;
+        icon[0][6] <= 8'b00000000;
+        icon[0][7] <= 8'b00000000;
+        
+        icon[1][0] <= 8'b00000000;
+        icon[1][1] <= 8'b00000000;
+        icon[1][2] <= 8'b00000000;
+        icon[1][3] <= 8'b00000000;
+        icon[1][4] <= 8'b00000000;
+        icon[1][5] <= 8'b00010000;
+        icon[1][6] <= 8'b00111000;
+        icon[1][7] <= 8'b00000000;
+        
+        icon[2][0] <= 8'b00000000;
+        icon[2][1] <= 8'b00000000;
+        icon[2][2] <= 8'b00000000;
+        icon[2][3] <= 8'b00000000;
+        icon[2][4] <= 8'b00000000;
+        icon[2][5] <= 8'b00111000;
+        icon[2][6] <= 8'b00111000;
+        icon[2][7] <= 8'b00000000;
+        
+        icon[3][0] <= 8'b00000000;
+        icon[3][1] <= 8'b00000000;
+        icon[3][2] <= 8'b00000000;
+        icon[3][3] <= 8'b00000000;
+        icon[3][4] <= 8'b00111000;
+        icon[3][5] <= 8'b00111000;
+        icon[3][6] <= 8'b00111000;
+        icon[3][7] <= 8'b00000000;
+        
+        icon[4][0] <= 8'b00000000;
+        icon[4][1] <= 8'b00000000;
+        icon[4][2] <= 8'b00000000;
+        icon[4][3] <= 8'b00000000;
+        icon[4][4] <= 8'b00111100;
+        icon[4][5] <= 8'b00111100;
+        icon[4][6] <= 8'b00111100;
+        icon[4][7] <= 8'b00000000;
+        
+        dino[0] <= 8'b00000000;
+        dino[1] <= 8'b00000010;
+        dino[2] <= 8'b00000110;
+        dino[3] <= 8'b00011110;
+        dino[4] <= 8'b00111100;
+        dino[5] <= 8'b00110010;
+        dino[6] <= 8'b01110010;
+        dino[7] <= 8'b00000000;
+        
+        dino_std[0] <= 8'b00000011;
+        dino_std[1] <= 8'b00000010;
+        dino_std[2] <= 8'b00000110;
+        dino_std[3] <= 8'b00011110;
+        dino_std[4] <= 8'b00111100;
+        dino_std[5] <= 8'b00110010;
+        dino_std[6] <= 8'b01110010;
+        dino_std[7] <= 8'b00000000;
+        //init matrices
+		for( i=0; i<ROWS; i = i + 1 ) begin
+			for( j=0; j<COLS; j = j + 1 ) begin
+				game_matrix[i][j] = 0;
+			end
+		end	
+        transform_mat_for_board();
+		gen_seq_to_send();
     end
     // 15ms frame time
     // 1s jump up/down unless down button is pressed
     always@(posedge clk) begin
-        for( i=0; i<ROWS; i = i + 1 ) begin
-            for( j=0; j<COLS; j = j + 1 ) begin
-                game_matrix[i][j] = !game_matrix[i][j];
+        // for( i=0; i<ROWS; i = i + 1 ) begin
+        //     for( j=0; j<COLS; j = j + 1 ) begin
+        //         game_matrix[i][j] = !game_matrix[i][j];
+        //     end
+        // end	
+        
+        // sprite rendering
+        case (renderer_state) 
+            0: begin
+                // update game matrix
+                for (k=0; k < 3; k = k + 1) begin
+                    // check if index in obstacle array contains a obstacle
+                    if (obstacle_pos[k][14]) begin
+                          $display("\nRender Sprite #: %d", k);
+                          $display("\nRow #: %d", obstacle_pos[k][9:5]);
+                          $display("\nCol #: %d", obstacle_pos[k][4:0]);
+                        for( i=0; i<8; i = i + 1 ) begin
+                            for( j=0; j<8; j = j + 1 ) begin
+//                                $display("\nPixel Row #: %d", obstacle_pos[k][9:5] + i);
+//                                $display("\nPixel Col #: %d", obstacle_pos[k][4:0] + j);
+//                                $display("\nOn #: %d", icon[k][i][j]);
+                                game_matrix[obstacle_pos[k][9:5] + i][obstacle_pos[k][4:0] + j] = icon[obstacle_pos[13:10]][i][j];
+                            end
+                        end	
+                    end
+                end
+
+                renderer_state = 1;
             end
-        end	
+            1: begin
+                // update obstacle positions
+                for (k=0; k < 3; k = k + 1) begin
+                    obstacle_pos[k][4:0] = obstacle_pos[k][4:0] - 1;
+                end
+                renderer_state = 2;
+            end
+            2: begin
+                // update game board
+                  transform_mat_for_board();
+		          gen_seq_to_send();
+                  renderer_state <= 0;
+                  $display("\nTo Game matrix: in initial after transform");
+                for( i=0; i<ROWS; i = i + 1 ) begin
+                    for( j=0; j<COLS; j = j + 1 ) begin
+                        $write("%D ", game_matrix[i][j]);
+                    end
+                    $write("\n");
+                end
+                renderer_state = 0;
+
+            end
+        endcase
     end
 endmodule
