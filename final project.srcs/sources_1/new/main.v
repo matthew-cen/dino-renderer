@@ -22,8 +22,11 @@
 
 module main(
     clk
+    ,cs, write, data, debug, 
     );
     input clk;
+    output cs, write, data, debug;
+
     reg [15:0] i, j, k;
     reg [14:0] obstacle_pos [3:0]; 
     // 2D array, [14] is active bit, [13:10] is sprite num,[9:5] is y position, [4:0] is x position, max 4 obstables at once
@@ -39,9 +42,11 @@ module main(
     parameter ROWS = 16;
 	parameter COLS = 24;
 	parameter MATRIX_TOTAL = ROWS * COLS; //384
-//    parameter test_clk_cnt = 100000000;
-    parameter test_clk_cnt = 2; // clock temporary set as low value for simulation
+//    parameter cnt_100M = 100000000;
+    parameter cnt_100M = 2; // clock temporary set as low value for simulation
+    
 
+    
     LED_matrix mat(
     .clk(clk),
     .cnt_100M(cnt_100M),
@@ -56,7 +61,7 @@ module main(
     reg [7:0] dino [7:0];
     reg [7:0] dino_std [7:0];
     wire one_sec_clock_out;
-    counter one_sec_clock(clk, one_sec_clock_out, test_clk_cnt);
+    counter one_sec_clock(clk, one_sec_clock_out, cnt_100M);
     //transfer 8 slots to where they map on board    
     task transfer_line;
         input integer to_row, to_col, from_row, from_col;
