@@ -25,21 +25,22 @@ module main(
     );
     input clk;
     reg [15:0] i, j, k;
-    reg [14:0] obstacle_pos [3:0]; // 2D array, [14] is active bit, [13:10] is sprite num,[9:5] is y position, [4:0] is x position, max 4 obstables at once
-    reg [1:0] renderer_state;
+    reg [14:0] obstacle_pos [3:0]; 
+    // 2D array, [14] is active bit, [13:10] is sprite num,[9:5] is y position, [4:0] is x position, max 4 obstables at once
+    reg [2:0] renderer_state;
     reg game_matrix [15:0][23:0];
 	reg matrix_to_send [15:0][23:0];
 	reg [393:0] seq;
 	reg [31:0] seq_nbits;
-    reg [3:0] current_sprite; // sprite currently being processed
+    reg [3:0] current_sprite; // sprite index currently being processed
     reg [4:0] pixel_pos_x;
     reg [4:0] pixel_pos_y;
-    reg game_over;
+    reg game_over; // flag that is set when game is over
     parameter ROWS = 16;
 	parameter COLS = 24;
 	parameter MATRIX_TOTAL = ROWS * COLS; //384
 //    parameter test_clk_cnt = 100000000;
-    parameter test_clk_cnt = 2;
+    parameter test_clk_cnt = 2; // clock temporary set as low value for simulation
 
     LED_matrix mat(
     .clk(clk),
@@ -242,11 +243,26 @@ module main(
         // end	
         
         // sprite rendering
-        case (renderer_state) 
-            0: begin
-                // update game matrix
+        case (renderer_state)
+            0: begin // clear board with 0
+                for( i=0; i<ROWS; i = i + 1 ) begin
+                    for( j=0; j<COLS; j = j + 1 ) begin
+                        game_matrix[i][j] = 0;
+                    end
+                end
+                renderer_state <= 1;
+
+            end
+            1: begin
+                // draw dinosaur
+                // EVAN's DINOSAUR
+                renderer_state <= 2;
+            end 
+            2: begin
+                // draw obstacles
+                // iterate over sprite queue/array (currently max 4 obstacles
                 for (k=0; k < 4; k = k + 1) begin
-                    // check if index in obstacle array contains a obstacle
+                    // check if index in obstacle array contains a active obstacle flagged by the 14th bit
                     if (obstacle_pos[k][14]) begin
                         current_sprite = obstacle_pos[k][14:10];
                           $display("\n Render Sprite #: %d Row #: %d, Col#: %d", current_sprite,obstacle_pos[k][9:5], obstacle_pos[k][4:0]);
@@ -259,34 +275,38 @@ module main(
                                 pixel_pos_y = obstacle_pos[k][9:5] + i;
                                 pixel_pos_x = obstacle_pos[k][4:0] + j;
                                 if (pixel_pos_y < 15 || pixel_pos_x < 23) begin
-                                    // collision check
-                                    if (game_matrix[pixel_pos_y][pixel_pos_x] == 1) begin
+                                    // collision  check if placing a 1 on a 1
+                                    if (game_matrix[pixel_pos_y][pixel_pos_x] == 1 && icon[current_sprite][i][j]) begin  
                                         game_over = 1;
                                     end
-                                    game_matrix[pixel_pos_y][pixel_pos_x] = icon[current_sprite][i][j];
+                                    else begin
+                                        game_matrix[pixel_pos_y][pixel_pos_x] = icon[current_sprite][i][j];
+                                    end
                                 end
                             end
                         end	
                     end
                 end
-                if (game_over) renderer_state = 3;
-                else renderer_state = 1;
+                if (game_over) renderer_state = 5;
+                else renderer_state = 3;
             end
-            1: begin
+            3: begin
                 // update obstacle positions
                 for (k=0; k < 3; k = k + 1) begin
+                    // if obstacle goes off the screen, mark obstacle as deleted
                     if (obstacle_pos[k][4:0] == 24) begin
                         obstacle_pos[k][14] = 0;
                     end
                     else begin
+                        // move obstacle one pixel left
                         obstacle_pos[k][4:0] = obstacle_pos[k][4:0] - 1;
                     end
                 end
                 // remove object from obstacle queue
-                renderer_state = 2;
+                renderer_state <= 4;
             end
-            2: begin
-                // update game board
+            4: begin
+                // render game matrix on matrix board
                   transform_mat_for_board();
 		          gen_seq_to_send();
                   renderer_state <= 0;
@@ -299,8 +319,13 @@ module main(
                 end
                 renderer_state = 0;
             end
-            3: begin
+            5: begin
                 // game over state
+                for( i=0; i<ROWS; i = i + 1 ) begin
+                    for( j=0; j<COLS; j = j + 1 ) begin
+                        game_matrix[i][j] = 1;
+                    end
+                end
             end
         endcase
     end
