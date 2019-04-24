@@ -1,12 +1,62 @@
 #-----------------------------------------------------------
-# Vivado v2018.2 (64-bit)
-# SW Build 2258646 on Thu Jun 14 20:03:12 MDT 2018
-# IP Build 2256618 on Thu Jun 14 22:10:49 MDT 2018
-# Start of session at: Wed Apr 10 16:13:16 2019
-# Process ID: 8172
-# Current directory: S:/final project
-# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent3952 S:\final project\final project.xpr
-# Log file: S:/final project/vivado.log
-# Journal file: S:/final project\vivado.jou
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Apr 24 15:00:47 2019
+# Process ID: 11052
+# Current directory: E:/Programming/Vivado/dino-renderer-master
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent3024 E:\Programming\Vivado\dino-renderer-master\final project.xpr
+# Log file: E:/Programming/Vivado/dino-renderer-master/vivado.log
+# Journal file: E:/Programming/Vivado/dino-renderer-master\vivado.jou
 #-----------------------------------------------------------
 start_gui
+open_project {E:/Programming/Vivado/dino-renderer-master/final project.xpr}
+update_compile_order -fileset sources_1
+add_files -norecurse {E:/Programming/Vivado/dino-renderer-master/location.v {E:/Programming/Vivado/dino-renderer-master/final project.srcs/sources_1/new/counter.v} {E:/Programming/Vivado/dino-renderer-master/final project.srcs/sources_1/new/LED_matrix.v}}
+update_compile_order -fileset sources_1
+open_project {E:/Programming/Vivado/Final Project/project_1/project_1.xpr}
+update_compile_order -fileset sources_1
+current_project {final project}
+current_project project_1
+current_project {final project}
+current_project project_1
+current_project {final project}
+update_compile_order -fileset sources_1
+launch_simulation
+launch_simulation
+source main.tcl
+add_force {/main/clk} -radix hex {1 0ns} {0 50000ps} -repeat_every 100000ps
+add_force {/main/BTNU} -radix hex {0 0ns}
+add_force {/main/BTND} -radix hex {0 0ns}
+run .1 ms
+add_force {/main/BTNU} -radix hex {1 0ns}
+close_sim
+launch_simulation
+source main.tcl
+add_force {/main/clk} -radix hex {1 0ns} {0 50000ps} -repeat_every 100000ps
+add_force {/main/BTNU} -radix hex {1 0ns}
+add_force {/main/BTND} -radix hex {0 0ns}
+add_force {/main/BTNU} -radix hex {0 0ns}
+run .1 ms
+add_force {/main/BTNU} -radix hex {1 0ns}
+run .1 ms
+run .1 ms
+run .1 ms
+run .1 ms
+run .1 ms
+run .1 ms
+run .1 ms
+run 1 ms
+run 1 ms
+run 1 ms
+add_force {/main/clk} -radix hex {1 0ns} {0 5000ps} -repeat_every 10000ps
+run 1 ms
+close_sim
+launch_simulation
+source main.tcl
+add_force {/main/clk} -radix hex {1 0ns} {0 50000ps} -repeat_every 100000ps
+add_force {/main/BTNU} -radix hex {0 0ns}
+add_force {/main/BTND} -radix hex {0 0ns}
+run 1 ms
+close_sim
+close_project

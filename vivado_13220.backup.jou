@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Wed Apr 24 14:58:50 2019
+# Process ID: 13220
+# Current directory: E:/Programming/Vivado/dino-renderer-master
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent3560 E:\Programming\Vivado\dino-renderer-master\final project.xpr
+# Log file: E:/Programming/Vivado/dino-renderer-master/vivado.log
+# Journal file: E:/Programming/Vivado/dino-renderer-master\vivado.jou
+#-----------------------------------------------------------
+start_guioopen_project {E:/Programming/Vivado/dino-renderer-master/final project.xpr}uupdate_compile_order -fileset sources_1
